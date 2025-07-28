@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.log
+*.ipynb
+.DS_Store
+.vscode/
+.idea/
+*.zip
+*.db
+output/
+
