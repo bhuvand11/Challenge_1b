@@ -1,59 +1,119 @@
-# Challenge 1B — Approach Explanation
+# Challenge 1B — Relevant Section Extraction from PDFs
 
-## 🧠 Problem Understanding
-
-Adobe India Hackathon Challenge 1B required designing a system that could extract only the most relevant portions of a PDF file based on a specific user query or intent. The system needed to run offline, be deployable via Docker, and operate efficiently across diverse documents.
 
 ---
 
-## 🔍 Methodology
+## 🌐 Overview
 
-We followed a multi-stage pipeline that separates structural extraction from semantic relevance estimation. This two-layered approach ensures the method is robust to both layout-based and meaning-based variations across PDFs.
+This repository contains a Dockerized, offline-compatible solution for **Adobe India Hackathon Challenge 1B**, which involves extracting only the most relevant sections of a PDF in response to a provided query.
 
-### 1. **Input Query Parsing**
-
-* The system begins with a `challenge1b_input.json` file, which provides an instruction or prompt (e.g., "extract sections about payment terms").
-* This query acts as the anchor for downstream semantic matching.
-
-### 2. **PDF Parsing and Outline Extraction**
-
-* Using `PyMuPDF`, the raw PDF is parsed into pages and segments.
-* `outline_extractor.py` builds a hierarchical section structure based on layout cues and heading patterns.
-* The extracted segments are stored with contextual metadata including page number and relative position.
-
-### 3. **Sentence Embedding and Similarity Matching**
-
-* `section_selector.py` loads the text of each segment and uses the locally stored `all-MiniLM-L6-v2` model from `sentence-transformers` to convert each block into a dense vector.
-* The input query is embedded in the same vector space.
-* Cosine similarity is calculated between the query vector and each segment vector.
-* The top-k most relevant sections are selected based on similarity scores.
-
-### 4. **Linguistic Processing with spaCy**
-
-* For enhanced linguistic consistency and preprocessing, we include `spaCy`'s `en_core_web_sm` model, which is loaded offline.
-* It ensures named entity recognition and sentence segmentation is stable and reproducible.
+All components run fully offline using pretrained models and local inference, and the setup is compatible with **Linux AMD64** environments via Docker.
 
 ---
 
-## ⚙️ Engineering & Deployment
+## ✍️ Approach
 
-* The entire pipeline runs via a single entry point: `main.py`.
-* The required folders are `/input` (for PDFs), `/output` (for extracted JSON), and `/models` (for preloaded models).
-* The Dockerfile installs dependencies, links spaCy, and copies models so that the solution is **100% offline**.
-* The image is built and run with standard Docker commands using `--platform linux/amd64` for compatibility.
+### 1. Input Query
+
+* The system begins with a query defined in `challenge1b_input.json`, which specifies what information to extract from the PDF.
+
+### 2. Outline Extraction
+
+* `outline_extractor.py` scans the PDF using `PyMuPDF` and extracts hierarchical sections based on layout, indentation, and font.
+
+### 3. Semantic Matching
+
+* `section_selector.py` embeds both the query and all extracted sections using the offline `sentence-transformers/all-MiniLM-L6-v2` model.
+* Cosine similarity is used to find the top-k relevant matches.
+
+### 4. Linguistic Enhancement
+
+* `spaCy` is used for additional NLP preprocessing with the `en_core_web_sm` model, which is stored and linked offline.
+
+### 5. Execution Pipeline
+
+* The complete process is initiated by `main.py`, which loads the query, processes the PDF, selects relevant sections, and writes the final output JSON.
 
 ---
 
-## ✅ Benefits of the Approach
+## 📦 Libraries Used
 
-* **Offline Execution**: No need for live API calls or model downloads.
-* **Fast Inference**: SentenceTransformer and spaCy are preloaded for low-latency embedding and parsing.
-* **Adaptable**: Modular design makes it easy to upgrade models or add fine-tuned datasets.
-* **Portable**: Cross-platform compatibility via Docker with no reliance on external networks.
+* `PyMuPDF`
+* `pandas`, `numpy`
+* `sentence-transformers`
+* `scikit-learn`
+* `spaCy`
+* `joblib`
 
 ---
 
-## 📦 Outcome
+## 🤖 Models Used
 
-This solution successfully delivers relevant section summaries for any given PDF and query combination. The result is a clean, ranked JSON output of contextually aligned segments, enabling intelligent document understanding.
+* Sentence Embedding: `sentence-transformers/all-MiniLM-L6-v2`
+* NLP Toolkit: `spaCy` with `en_core_web_sm` (manually linked inside Docker)
+* Heading Detection: `models/heading_model_ensemble.joblib` (included for reuse or debugging — currently not invoked by default)
+
+---
+
+## 📂 Folder Structure
+
+```
+Challenge_1b/
+├── main.py
+├── section_selector.py
+├── outline_extractor.py
+├── challenge1b_input.json
+├── input/                  # Input PDFs
+│   └── sample.pdf
+├── output/                 # Output JSON with relevant sections
+│   └── .keep               # Placeholder for Git tracking
+├── models/
+│   ├── all-MiniLM-L6-v2/   # Sentence transformer model
+│   ├── en_core_web_sm/     # Local spaCy model (v3.8.0)
+│   └── heading_model_ensemble.joblib
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+└── README.md
+```
+
+---
+
+## 🐳 Docker Instructions
+
+### 🔧 Build the Docker Image
+
+```bash
+docker build --platform linux/amd64 -t challenge1b-app .
+```
+
+### 🚀 Run the Container
+
+```bash
+docker run --rm \
+  -v "$(pwd)/input":/app/input:ro \
+  -v "$(pwd)/output":/app/output \
+  --network none \
+  challenge1b-app
+```
+
+---
+
+## ✅ Output Format
+
+* The result will be saved as a `.json` file in the `/output` folder.
+* This JSON contains only the top-k sections semantically aligned to the query.
+
+---
+
+## 📎 Notes
+
+* Runs **fully offline**
+* Compatible with **Linux AMD64**
+* Pretrained models stored in `/models` and loaded directly in Docker
+* spaCy model is linked manually using:
+
+  ```dockerfile
+  RUN python -m spacy link models/en_core_web_sm/en_core_web_sm-3.8.0 en_core_web_sm
+  ```
 
