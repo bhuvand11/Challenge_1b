@@ -5,7 +5,7 @@
 
 ## 🌐 Overview
 
-This repository contains a Dockerized, offline-compatible solution for **Adobe India Hackathon Challenge 1B**, which involves extracting only the most relevant sections of a PDF in response to a provided query.
+This repository contains a Dockerized, offline-compatible solution for **Adobe India Hackathon Challenge 2025 1B**, which involves extracting only the most relevant sections of a PDF in response to a provided query.
 
 All components run fully offline using pretrained models and local inference, and the setup is compatible with **Linux AMD64** environments via Docker.
 
